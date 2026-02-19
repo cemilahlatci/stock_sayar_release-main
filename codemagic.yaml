@@ -1,37 +1,30 @@
 workflows:
-  ios-app-viewer-workflow:
-    name: iOS App Viewer Workflow
-    max_build_duration: 30
+  ios-workflow:
+    name: iOS Build Workflow
+    max_build_duration: 60
     instance_type: mac_mini_m1
     environment:
       flutter: stable
       xcode: latest
-      groups:
-        - app_store_credentials
-      vars:
-        BUNDLE_ID: "com.gursoy.test" # Burayı kendi Bundle ID'niz ile güncelleyin
+      cocoapods: default
     scripts:
-      - name: Initialize Keychain
-        script: |
-          keychain initialize
-      - name: Fetch Signing Files
-        script: |
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_DEVELOPMENT --create
-          keychain add-certificates
-      - name: Flutter Pub Get
+      - name: Get Flutter packages
         script: |
           flutter pub get
-      - name: Flutter Build iOS
+      - name: Flutter build iOS
         script: |
+          # --no-codesign ile sadece .app üretir
           flutter build ios --release --no-codesign
-      - name: Build IPA for App Viewer
+      - name: Package artifacts
         script: |
-          xcode-project build-ipa \
-            --workspace "ios/Runner.xcworkspace" \
-            --scheme "Runner" \
-            --bundle-id "$BUNDLE_ID"
+          # .app dosyasını Payload klasörüne koyup .ipa olarak zipleyelim
+          # Bu yöntem geçici testler ve "App Viewer" görünümü için yeterlidir
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r Runner.ipa Payload
+          mv Runner.ipa build/ios/iphoneos/
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ios/iphoneos/*.ipa
     publishing:
       email:
         recipients:
