@@ -1,19 +1,38 @@
 workflows:
-  ios-workflow:
-    name: iOS Build Workflow
-    max_build_duration: 60
+  ios-app-viewer-workflow:
+    name: iOS App Viewer Workflow
+    max_build_duration: 30
     instance_type: mac_mini_m1
     environment:
       flutter: stable
       xcode: latest
-      cocoapods: default
+      groups:
+        - app_store_credentials
+      vars:
+        BUNDLE_ID: "com.gursoy.test" # Burayı kendi Bundle ID'niz ile güncelleyin
     scripts:
-      - name: Get Flutter packages
+      - name: Initialize Keychain
+        script: |
+          keychain initialize
+      - name: Fetch Signing Files
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_DEVELOPMENT --create
+          keychain add-certificates
+      - name: Flutter Pub Get
         script: |
           flutter pub get
-      - name: Flutter build iOS
+      - name: Flutter Build iOS
         script: |
           flutter build ios --release --no-codesign
+      - name: Build IPA for App Viewer
+        script: |
+          xcode-project build-ipa \
+            --workspace "ios/Runner.xcworkspace" \
+            --scheme "Runner" \
+            --bundle-id "$BUNDLE_ID"
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      email:
+        recipients:
+          - gdiyar@gmail.com
