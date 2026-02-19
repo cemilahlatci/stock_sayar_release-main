@@ -5,8 +5,6 @@ workflows:
     name: Flutter iOS Simulator
 
     environment:
-
-      environment:
       
       flutter: 3.27.0
       
