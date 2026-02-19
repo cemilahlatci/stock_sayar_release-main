@@ -6,7 +6,7 @@ workflows:
 
     environment:
       
-      flutter: 3.27.0
+      flutter: stable
       
       xcode: latest
 
