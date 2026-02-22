@@ -1,6 +1,6 @@
 workflows:
   ios-workflow:
-    name: iOS Build Workflow
+    name: iOS Simulator Build Workflow
     max_build_duration: 60
     instance_type: mac_mini_m1
     environment:
@@ -8,14 +8,29 @@ workflows:
       xcode: latest
       cocoapods: default
     scripts:
+      - name: Clean previous builds (optional)
+        script: flutter clean
       - name: Get Flutter packages
         script: |
           flutter pub get
-      - name: Flutter build iOS
+      - name: Flutter build for iOS Simulator  # <-- Değişti
         script: |
-          flutter build ios --release --no-codesign
-    artifacts:
-      - build/ios/iphoneos/Runner.app
+          # --debug ve --simulator flagleri ile simulator için .app üretir
+          flutter build ios --debug --simulator --no-codesign
+      - name: Package artifacts for Simulator  # <-- Paketleme yolu değişti
+        script: |
+          # .app dosyasını Payload klasörüne koyup .zip olarak paketleyelim (ipa gerekmez)
+          mkdir -p Payload
+          # Not: Simulator build'i "iphonesimulator" klasöründe olur
+          cp -r build/ios/iphonesimulator/Runner.app Payload/
+          zip -r Runner-simulator.zip Payload
+          # Zipten sonra Payload klasörünü temizleyelim
+          rm -rf Payload
+          # Oluşan zip'i daha sonra artifacts'te kolayca bulmak için bir klasöre taşıyalım
+          mkdir -p build/ios/simulator
+          mv Runner-simulator.zip build/ios/simulator/
+    artifacts: # <-- Artifacts yolu güncellendi
+      - build/ios/simulator/*.zip
     publishing:
       email:
         recipients:
