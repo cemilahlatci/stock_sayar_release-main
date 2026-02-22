@@ -7,24 +7,27 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+      ios_signing:
+        distribution_type: ad_hoc       # App Store'a yüklemek için: app_store
+        bundle_identifier: com.crossist.stocksayar
     scripts:
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
       - name: Get Flutter packages
         script: |
           flutter pub get
-      - name: Flutter build iOS
+      - name: Install CocoaPods
         script: |
-          # --no-codesign ile sadece .app üretir
-          flutter build ios --release --no-codesign
-      - name: Package artifacts
+          cd ios && pod install
+      - name: Flutter build IPA
         script: |
-          # .app dosyasını Payload klasörüne koyup .ipa olarak zipleyelim
-          # Bu yöntem geçici testler ve "App Viewer" görünümü için yeterlidir
-          mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
-          zip -r Runner.ipa Payload
-          mv Runner.ipa build/ios/iphoneos/
+          flutter build ipa \
+            --release \
+            --export-options-plist=$CM_BUILD_DIR/ios/ExportOptions.plist
     artifacts:
-      - build/ios/iphoneos/*.ipa
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       email:
         recipients:
