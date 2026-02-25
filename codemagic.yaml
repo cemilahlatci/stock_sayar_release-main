@@ -26,8 +26,15 @@ workflows:
           cd ios && pod install
       - name: Set build number
         script: |
-          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
-          agvtool new-version -all $((LATEST_BUILD + 1))
+          set +e
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null)
+          set -e
+          if [ -z "$LATEST_BUILD" ] || [ "$LATEST_BUILD" = "0" ]; then
+            LATEST_BUILD=0
+          fi
+          NEW_BUILD=$((LATEST_BUILD + 1))
+          echo "Setting build number to: $NEW_BUILD"
+          agvtool new-version -all $NEW_BUILD
       - name: Flutter build IPA
         script: |
           flutter build ipa \
