@@ -1,8 +1,8 @@
 workflows:
   ios-workflow:
-    name: iOS Build & Publish
+    name: iOS Build Test (M2 Instance)
     max_build_duration: 60
-    instance_type: mac_mini_m1
+    instance_type: mac_mini_m2
     integrations:
       app_store_connect: Codemagic
     environment:
@@ -13,7 +13,7 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.crossist.stocksayar
       vars:
-        APP_STORE_APPLE_ID: "BURAYA_APP_APPLE_ID"  # App Store Connect'ten alınır
+        APP_STORE_APPLE_ID: 6759662843
     scripts:
       - name: Set up code signing settings on Xcode project
         script: |
@@ -24,23 +24,15 @@ workflows:
       - name: Install CocoaPods
         script: |
           cd ios && pod install
-      - name: Set build number
+      - name: Set build number (Local Test)
         script: |
-          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
-          agvtool new-version -all $((LATEST_BUILD + 1))
+          cd ios && agvtool new-version -all 1
       - name: Flutter build IPA
         script: |
-          flutter build ipa \
-            --release \
-            --export-options-plist=$CM_BUILD_DIR/ios/ExportOptions.plist
+          flutter build ipa --release --build-number=1
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
     publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
-        expire_build_submitted_for_review: true
       email:
         recipients:
           - gdiyar@gmail.com
