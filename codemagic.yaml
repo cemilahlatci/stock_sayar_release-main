@@ -29,7 +29,7 @@ workflows:
           cd ios && agvtool new-version -all 1
       - name: Flutter build IPA
         script: |
-          flutter build ipa --release --build-number=1
+          flutter build ipa --release --build-number=1 --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
