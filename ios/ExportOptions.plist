@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>method</key>
-	<string>ad-hoc</string>
+	<string>app-store</string>
 	<key>teamID</key>
-	<string>BURAYA_TEAM_ID_YAZIN</string>
+	<string>7489UB3THC</string>
 	<key>compileBitcode</key>
 	<false/>
 	<key>uploadBitcode</key>
