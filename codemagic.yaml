@@ -1,37 +1,49 @@
 workflows:
   ios-workflow:
-    name: iOS Simulator Build Workflow
+    name: iOS Build & Publish
     max_build_duration: 60
     instance_type: mac_mini_m1
+    integrations:
+      app_store_connect: Codemagic
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.crossist.stocksayar
+      vars:
+        APP_STORE_APPLE_ID: "BURAYA_APP_APPLE_ID"  # App Store Connect'ten alınır
     scripts:
-      - name: Clean previous builds (optional)
-        script: flutter clean
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
       - name: Get Flutter packages
         script: |
           flutter pub get
-      - name: Flutter build for iOS Simulator  # <-- Değişti
+      - name: Install CocoaPods
         script: |
-          # --debug ve --simulator flagleri ile simulator için .app üretir
-          flutter build ios --debug --simulator --no-codesign
-      - name: Package artifacts for Simulator  # <-- Paketleme yolu değişti
+          cd ios && pod install
+      - name: Set build number
         script: |
-          # .app dosyasını Payload klasörüne koyup .zip olarak paketleyelim (ipa gerekmez)
-          mkdir -p Payload
-          # Not: Simulator build'i "iphonesimulator" klasöründe olur
-          cp -r build/ios/iphonesimulator/Runner.app Payload/
-          zip -r Runner-simulator.zip Payload
-          # Zipten sonra Payload klasörünü temizleyelim
-          rm -rf Payload
-          # Oluşan zip'i daha sonra artifacts'te kolayca bulmak için bir klasöre taşıyalım
-          mkdir -p build/ios/simulator
-          mv Runner-simulator.zip build/ios/simulator/
-    artifacts: # <-- Artifacts yolu güncellendi
-      - build/ios/simulator/*.zip
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          agvtool new-version -all $((LATEST_BUILD + 1))
+      - name: Flutter build IPA
+        script: |
+          flutter build ipa \
+            --release \
+            --export-options-plist=$CM_BUILD_DIR/ios/ExportOptions.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        expire_build_submitted_for_review: true
       email:
         recipients:
           - gdiyar@gmail.com
+        notify:
+          success: true
+          failure: true
