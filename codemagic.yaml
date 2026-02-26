@@ -33,6 +33,12 @@ workflows:
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: 5SCW9X85LX
+        issuer_id: a56cfe96-b221-432d-854a-0c931d7c6e35
+        submit_to_testflight: true
+        expire_build_submitted_for_review: true
       email:
         recipients:
           - gdiyar@gmail.com
